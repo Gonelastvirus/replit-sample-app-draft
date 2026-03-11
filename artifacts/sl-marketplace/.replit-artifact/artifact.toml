@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "SL Real Estate & Construction Marketplace"
+version = "1.0.0"
+id = "artifacts/sl-marketplace"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+localPort = 22620
+name = "expo"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/sl-marketplace run dev"
+
+[services.env]
+PORT = "22620"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/sl-marketplace", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/sl-marketplace", "run", "serve"]

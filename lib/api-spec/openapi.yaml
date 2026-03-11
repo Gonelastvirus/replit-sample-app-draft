@@ -1,22 +1,32 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SL Real Estate & Construction Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: properties
+    description: Property listing operations
+  - name: services
+    description: Construction services directory
+  - name: favorites
+    description: User favorites
+  - name: auth
+    description: Authentication
+  - name: admin
+    description: Admin moderation
+  - name: about
+    description: About page content
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,549 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /properties:
+    get:
+      operationId: getProperties
+      tags: [properties]
+      summary: Get all approved properties
+      parameters:
+        - name: district
+          in: query
+          schema:
+            type: string
+        - name: listingType
+          in: query
+          schema:
+            type: string
+            enum: [sale, rent]
+        - name: propertyType
+          in: query
+          schema:
+            type: string
+            enum: [house, land, apartment, commercial]
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: minArea
+          in: query
+          schema:
+            type: number
+        - name: maxArea
+          in: query
+          schema:
+            type: number
+        - name: bedrooms
+          in: query
+          schema:
+            type: number
+        - name: amenities
+          in: query
+          schema:
+            type: string
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: offset
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Property"
+                  total:
+                    type: number
+                required:
+                  - properties
+                  - total
+
+    post:
+      operationId: createProperty
+      tags: [properties]
+      summary: Submit a new property listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePropertyInput"
+      responses:
+        "201":
+          description: Property created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /properties/featured:
+    get:
+      operationId: getFeaturedProperties
+      tags: [properties]
+      summary: Get featured properties for home screen
+      responses:
+        "200":
+          description: Featured properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Property"
+                required:
+                  - properties
+
+  /properties/{id}:
+    get:
+      operationId: getProperty
+      tags: [properties]
+      summary: Get a property by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Property details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      operationId: updateProperty
+      tags: [properties]
+      summary: Update a property (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePropertyInput"
+      responses:
+        "200":
+          description: Updated property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+    delete:
+      operationId: deleteProperty
+      tags: [properties]
+      summary: Delete a property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/properties:
+    get:
+      operationId: adminGetProperties
+      tags: [admin]
+      summary: Admin - get all properties including pending
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: limit
+          in: query
+          schema:
+            type: number
+        - name: offset
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: All properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Property"
+                  total:
+                    type: number
+                required:
+                  - properties
+                  - total
+
+  /admin/properties/{id}/approve:
+    post:
+      operationId: approveProperty
+      tags: [admin]
+      summary: Admin - approve a property listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Property approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /admin/properties/{id}/reject:
+    post:
+      operationId: rejectProperty
+      tags: [admin]
+      summary: Admin - reject a property listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Property rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /admin/properties/{id}/feature:
+    post:
+      operationId: featureProperty
+      tags: [admin]
+      summary: Admin - toggle featured status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                featured:
+                  type: boolean
+              required:
+                - featured
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /services:
+    get:
+      operationId: getServices
+      tags: [services]
+      summary: Get all construction services
+      parameters:
+        - name: district
+          in: query
+          schema:
+            type: string
+        - name: serviceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ConstructionService"
+                required:
+                  - services
+
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Admin - create a construction service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceInput"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConstructionService"
+
+  /services/{id}:
+    put:
+      operationId: updateService
+      tags: [services]
+      summary: Admin - update a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceInput"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConstructionService"
+
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Admin - delete a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+
+  /favorites:
+    get:
+      operationId: getFavorites
+      tags: [favorites]
+      summary: Get all favorites for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Favorite property IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favoriteIds:
+                    type: array
+                    items:
+                      type: number
+                  properties:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Property"
+                required:
+                  - favoriteIds
+                  - properties
+
+    post:
+      operationId: addFavorite
+      tags: [favorites]
+      summary: Add a property to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                propertyId:
+                  type: number
+              required:
+                - userId
+                - propertyId
+      responses:
+        "201":
+          description: Added to favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+
+  /favorites/{propertyId}:
+    delete:
+      operationId: removeFavorite
+      tags: [favorites]
+      summary: Remove a property from favorites
+      parameters:
+        - name: propertyId
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Removed
+
+  /about:
+    get:
+      operationId: getAbout
+      tags: [about]
+      summary: Get about page content
+      responses:
+        "200":
+          description: About content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AboutContent"
+
+    put:
+      operationId: updateAbout
+      tags: [about]
+      summary: Admin - update about content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AboutContent"
+      responses:
+        "200":
+          description: Updated about content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AboutContent"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +587,367 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        description:
+          type: string
+        listingType:
+          type: string
+          enum: [sale, rent]
+        propertyType:
+          type: string
+          enum: [house, land, apartment, commercial]
+        district:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        priceNpr:
+          type: number
+        areaDhur:
+          type: number
+          nullable: true
+        bedrooms:
+          type: number
+          nullable: true
+        bathrooms:
+          type: number
+          nullable: true
+        buildYear:
+          type: number
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        featured:
+          type: boolean
+        ownerName:
+          type: string
+        ownerPhone:
+          type: string
+        ownerWhatsapp:
+          type: string
+          nullable: true
+        rejectionReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - listingType
+        - propertyType
+        - district
+        - priceNpr
+        - amenities
+        - photos
+        - status
+        - featured
+        - ownerName
+        - ownerPhone
+        - createdAt
+        - updatedAt
+
+    CreatePropertyInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        listingType:
+          type: string
+          enum: [sale, rent]
+        propertyType:
+          type: string
+          enum: [house, land, apartment, commercial]
+        district:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        priceNpr:
+          type: number
+        areaDhur:
+          type: number
+          nullable: true
+        bedrooms:
+          type: number
+          nullable: true
+        bathrooms:
+          type: number
+          nullable: true
+        buildYear:
+          type: number
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+          nullable: true
+        ownerName:
+          type: string
+        ownerPhone:
+          type: string
+        ownerWhatsapp:
+          type: string
+          nullable: true
+      required:
+        - title
+        - description
+        - listingType
+        - propertyType
+        - district
+        - priceNpr
+        - ownerName
+        - ownerPhone
+
+    UpdatePropertyInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        listingType:
+          type: string
+          enum: [sale, rent]
+        propertyType:
+          type: string
+          enum: [house, land, apartment, commercial]
+        district:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        priceNpr:
+          type: number
+        areaDhur:
+          type: number
+          nullable: true
+        bedrooms:
+          type: number
+          nullable: true
+        bathrooms:
+          type: number
+          nullable: true
+        buildYear:
+          type: number
+          nullable: true
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+          nullable: true
+        ownerName:
+          type: string
+        ownerPhone:
+          type: string
+        ownerWhatsapp:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        featured:
+          type: boolean
+
+    ConstructionService:
+      type: object
+      properties:
+        id:
+          type: number
+        businessName:
+          type: string
+        serviceType:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: string
+          nullable: true
+        district:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - businessName
+        - serviceType
+        - phone
+        - district
+        - createdAt
+
+    CreateServiceInput:
+      type: object
+      properties:
+        businessName:
+          type: string
+        serviceType:
+          type: string
+        phone:
+          type: string
+        whatsapp:
+          type: string
+          nullable: true
+        district:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+        - businessName
+        - serviceType
+        - phone
+        - district
+
+    AboutContent:
+      type: object
+      properties:
+        mission:
+          type: string
+        vision:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+        address:
+          type: string
+        socialLinks:
+          type: object
+          properties:
+            facebook:
+              type: string
+              nullable: true
+            instagram:
+              type: string
+              nullable: true
+            twitter:
+              type: string
+              nullable: true
+        updatedAt:
+          type: string
+      required:
+        - mission
+        - vision
+        - contactPhone
+        - contactEmail
+        - address
+
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+          nullable: true
+      required:
+        - name
+        - email
+        - password
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [user, admin]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - role
+        - createdAt

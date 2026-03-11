@@ -1,0 +1,30 @@
+export const NEPAL_DISTRICTS = [
+  "Kathmandu", "Lalitpur", "Bhaktapur", "Kavre", "Sindhupalchok",
+  "Dhading", "Rasuwa", "Nuwakot", "Makwanpur", "Chitwan",
+  "Kaski", "Syangja", "Tanahun", "Lamjung", "Gorkha",
+  "Mustang", "Manang", "Myagdi", "Parbat", "Baglung",
+  "Gulmi", "Arghakhanchi", "Palpa", "Nawalpur", "Rupandehi",
+  "Kapilvastu", "Dang", "Banke", "Bardiya", "Surkhet",
+  "Morang", "Sunsari", "Saptari", "Siraha", "Dhanusha",
+  "Mahottari", "Sarlahi", "Rautahat", "Bara", "Parsa",
+  "Jhapa", "Ilam", "Panchthar", "Taplejung", "Sankhuwasabha",
+  "Terhathum", "Bhojpur", "Solukhumbu", "Okhaldhunga", "Khotang",
+  "Udayapur", "Dolakha", "Ramechhap", "Sindhuli", "Bagmati",
+  "Dolpa", "Mugu", "Jumla", "Kalikot", "Dailekh",
+  "Jajarkot", "Rukum", "Rolpa", "Pyuthan", "Salyan",
+  "Humla", "Bajura", "Bajhang", "Achham", "Doti",
+  "Kailali", "Kanchanpur", "Dadeldhura", "Baitadi", "Darchula",
+];
+
+export const SERVICE_TYPES = [
+  "plumber",
+  "brick_supplier",
+  "electrician",
+  "cement_supplier",
+  "contractor",
+  "hardware_store",
+  "sand_gravel_supplier",
+  "tile_supplier",
+  "iron_supplier",
+  "interior_designer",
+];

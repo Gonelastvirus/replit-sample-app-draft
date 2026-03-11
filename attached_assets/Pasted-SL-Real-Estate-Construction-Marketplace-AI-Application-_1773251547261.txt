@@ -1,0 +1,477 @@
+SL – Real Estate & Construction Marketplace
+AI Application Product Specification
+1. App Overview
+
+SL – Real Estate & Construction Marketplace is a mobile-first housing and construction marketplace designed for Nepal.
+
+The platform helps people:
+
+Discover land, houses, apartments, and commercial properties
+
+Buy or rent properties
+
+Contact construction professionals such as plumbers, brick suppliers, electricians, and building material agents
+
+Submit their own property listings
+
+Save favorite properties
+
+View properties on a map
+
+Watch property videos
+
+Switch the app language between English and Nepali
+
+The system includes an admin moderation panel where all property listings must be approved before they appear publicly.
+
+The app acts as a discovery and connection platform, connecting buyers, sellers, renters, and construction service providers.
+
+2. Core Concept
+
+The platform is a two-sided housing marketplace ecosystem.
+
+Supply Side
+
+Users who provide resources:
+
+Property owners
+
+Real estate agents
+
+Builders
+
+Construction service providers
+
+Material suppliers
+
+Demand Side
+
+Users looking for:
+
+Land
+
+Houses
+
+Apartments
+
+Rental homes
+
+Construction services
+
+The platform allows them to discover, compare, and contact each other directly.
+
+Communication happens through:
+
+Phone calls
+
+WhatsApp
+
+The platform itself does not process payments.
+
+3. Primary User Roles
+Guest User
+
+Guest users can explore the platform without creating an account.
+
+They can:
+
+Browse property listings
+
+View property details
+
+Search and filter properties
+
+View listings on the map
+
+Watch property videos
+
+Browse construction services
+
+Switch between English and Nepali
+
+View the about section
+
+Guest users cannot save favorites or submit listings.
+
+Registered User
+
+Registered users can create an account and interact more deeply with the platform.
+
+They can:
+
+Log in and log out
+
+Submit property listings
+
+Upload property images and videos
+
+Save favorite properties
+
+Manage their listings
+
+Contact construction service providers
+
+Listings submitted by users are not immediately visible to the public.
+They must first be approved by the admin.
+
+Admin
+
+The admin manages and moderates the entire platform.
+
+Admin responsibilities include:
+
+Reviewing newly submitted property listings
+
+Approving listings
+
+Rejecting listings
+
+Removing inappropriate listings
+
+Viewing full details of property owners
+
+Contacting property owners via WhatsApp
+
+Managing construction service contacts
+
+Managing the platform "About" page content
+
+Only approved listings become visible to users.
+
+4. Property Listing System
+
+Properties can be listed under different listing types and property types.
+
+Listing Types
+
+Each listing must specify whether the property is:
+
+For Sale
+
+For Rent
+
+Property Types
+
+Each property must belong to one of these categories:
+
+House
+
+Land
+
+Apartment
+
+Commercial Property
+
+5. Property Information Fields
+
+Each property listing contains structured details.
+
+Basic Information
+
+Title
+
+Description
+
+Listing type (Sale / Rent)
+
+Property type (House, Land, Apartment, Commercial)
+
+Location
+
+District
+
+Map coordinates (latitude and longitude)
+
+This allows the property to be displayed on the interactive map view.
+
+Pricing
+
+Price in Nepali Rupees (NPR)
+
+Area
+
+Area measured in Dhur, which is commonly used in Nepal.
+
+Property Specifications
+
+Depending on property type:
+
+Number of Bedrooms
+
+Number of Bathrooms
+
+Build Year
+
+Amenities
+
+Listings may include amenities such as:
+
+Parking
+
+Balcony
+
+Garden
+
+Water supply
+
+Internet
+
+Road access
+
+Solar system
+
+Security
+
+Terrace
+
+Lift (for apartments)
+
+Amenities are displayed as selectable tags.
+
+6. Media Upload
+
+Property owners can upload media to showcase their property.
+
+Each listing supports:
+
+Photos
+
+Multiple photos
+
+Photo gallery displayed in property detail page
+
+Video
+
+One property video
+
+Users can play the video inside the mobile app
+
+Videos help buyers better understand the property layout.
+
+7. Property Discovery
+
+Users can find properties in multiple ways.
+
+Home Screen
+
+The home screen displays:
+
+Featured listings
+
+Recently added properties
+
+Quick navigation buttons
+
+Search Screen
+
+Users can search and filter properties by:
+
+District
+
+Price range
+
+Area (Dhur)
+
+Listing type (Sale / Rent)
+
+Property type
+
+Number of bedrooms
+
+Amenities
+
+Search results update dynamically.
+
+Map View
+
+Users can explore properties on a map interface.
+
+Features include:
+
+Property markers on map
+
+Tap marker to view property preview
+
+Open full property details
+
+Navigate to property location
+
+This helps users see exact property locations geographically.
+
+Property Details Screen
+
+The property details page includes:
+
+Image gallery
+
+Property video player
+
+Full description
+
+Price formatted in NPR
+
+Area displayed in Dhur
+
+Beds and bathrooms
+
+Build year
+
+Amenities list
+
+Map preview
+
+Favorite button
+
+Contact owner via WhatsApp
+
+8. Favorites System
+
+Registered users can save listings they are interested in.
+
+Favorites allow users to:
+
+Bookmark properties
+
+View saved properties later
+
+Remove properties from favorites
+
+This helps users compare multiple properties before making decisions.
+
+9. Property Submission Flow
+
+Registered users can submit their own property listings.
+
+Submission form includes:
+
+Property title
+
+Description
+
+Listing type
+
+Property type
+
+Price
+
+Area in Dhur
+
+Beds and baths
+
+Build year
+
+Amenities
+
+Map location
+
+Photo uploads
+
+Video upload
+
+After submission:
+
+The listing status becomes Pending Approval.
+
+Admin must review the listing before it appears publicly.
+
+10. Admin Moderation Workflow
+
+The moderation system ensures quality and prevents spam.
+
+Submission Process
+
+User submits property listing
+
+Listing enters pending approval queue
+
+Admin reviews the listing
+
+Admin can:
+
+Approve listing
+
+Reject listing
+
+Remove listing
+
+Approved listings become visible on the platform.
+
+11. Construction Services Directory
+
+In addition to property listings, the platform includes a construction services directory.
+
+This section helps users find professionals needed for building or renovating homes.
+
+Examples of services include:
+
+Plumbers
+
+Brick suppliers
+
+Cement suppliers
+
+Electricians
+
+Contractors
+
+Hardware stores
+
+Sand and gravel suppliers
+
+Each service listing includes:
+
+Business name
+
+Service type
+
+Phone number
+
+WhatsApp contact
+
+District
+
+Description
+
+Users can contact service providers directly.
+
+12. Language Support
+
+The application supports bilingual interface options:
+
+English
+
+Nepali
+
+Users can switch languages at any time.
+
+All interface text updates dynamically based on the selected language.
+
+13. Media Experience
+
+To enhance the browsing experience:
+
+Images appear in swipeable galleries
+
+Property videos play directly inside the app
+
+Map preview shows exact location
+
+Amenities appear as icons or tags
+
+This creates a rich visual property discovery experience.
+
+14. Platform Vision
+
+The long-term goal of SL – Real Estate & Construction Marketplace is to become a complete housing ecosystem platform for Nepal where users can:
+
+Discover land and homes
+
+Find rental properties
+
+Connect with builders and suppliers
+
+Plan and build houses
+
+Explore properties geographically
+
+All within a single mobile application.
