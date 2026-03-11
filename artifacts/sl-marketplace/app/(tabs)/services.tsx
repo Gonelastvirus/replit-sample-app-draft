@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -28,6 +29,17 @@ type Service = {
   description?: string | null;
 };
 
+const SERVICE_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  architecture: "pen-tool",
+  construction: "tool",
+  interior: "layers",
+  plumbing: "droplet",
+  electrical: "zap",
+  painting: "edit-3",
+  roofing: "home",
+  landscaping: "sun",
+};
+
 export default function ServicesScreen() {
   const colors = useColors();
   const t = useT();
@@ -38,56 +50,116 @@ export default function ServicesScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery<{ services: Service[] }>({
     queryKey: ["services", selectedType],
     queryFn: () => {
-      const url = selectedType ? `${BASE_URL}/services?serviceType=${selectedType}` : `${BASE_URL}/services`;
+      const url = selectedType
+        ? `${BASE_URL}/services?serviceType=${selectedType}`
+        : `${BASE_URL}/services`;
       return fetch(url).then((r) => r.json());
     },
   });
 
   const services = data?.services || [];
+  const allTypes = ["", ...SERVICE_TYPES];
+
+  const FilterChips = (
+    <View style={[styles.filterWrap, { borderBottomColor: colors.border }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+      >
+        {allTypes.map((item) => {
+          const active = selectedType === item;
+          const icon = item ? SERVICE_ICONS[item] : "grid";
+          return (
+            <Pressable
+              key={item}
+              onPress={() => setSelectedType(item)}
+              style={[
+                styles.chip,
+                {
+                  borderColor: active ? colors.primary : colors.border,
+                  backgroundColor: active ? colors.primary : colors.card,
+                },
+              ]}
+            >
+              <Feather
+                name={icon || "tool"}
+                size={13}
+                color={active ? "#fff" : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: active ? "#fff" : colors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {item === "" ? t("all") : t(item)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topPadding + 10, backgroundColor: colors.backgroundSecondary, borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>{t("servicesTitle")}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t("servicesSubtitle")}</Text>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: topPadding + 10,
+            backgroundColor: colors.backgroundSecondary,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>{t("servicesTitle")}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {t("servicesSubtitle")}
+          </Text>
+        </View>
+        <View style={[styles.countBadge, { backgroundColor: colors.primary + "15" }]}>
+          <Text style={[styles.countText, { color: colors.primary }]}>
+            {services.length}
+          </Text>
+        </View>
       </View>
 
-      {/* Filter chips */}
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={["", ...SERVICE_TYPES]}
-        keyExtractor={(item) => item}
-        contentContainerStyle={styles.chips}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => setSelectedType(item)}
-            style={[styles.chip, { borderColor: selectedType === item ? colors.primary : colors.border, backgroundColor: selectedType === item ? colors.primary + "15" : "transparent" }]}
-          >
-            <Text style={[styles.chipText, { color: selectedType === item ? colors.primary : colors.textSecondary }]}>
-              {item === "" ? t("all") : t(item)}
-            </Text>
-          </Pressable>
-        )}
-      />
+      {/* Filter chips row */}
+      {FilterChips}
 
+      {/* Services list */}
       <FlatList
         data={isLoading ? [] : services}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={[styles.list, { paddingBottom: Platform.OS === "web" ? 118 : 100 }]}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: Platform.OS === "web" ? 118 : 100 },
+        ]}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={services.length > 0}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.primary}
+          />
         }
         ListEmptyComponent={
           isLoading ? (
             <View>{[1, 2, 3, 4, 5].map((k) => <ServiceCardSkeleton key={k} />)}</View>
           ) : (
             <View style={styles.empty}>
-              <Feather name="tool" size={40} color={colors.border} />
+              <View style={[styles.emptyIcon, { backgroundColor: colors.backgroundTertiary }]}>
+                <Feather name="tool" size={32} color={colors.textTertiary} />
+              </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>{t("noResults")}</Text>
+              <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+                Try a different service category
+              </Text>
             </View>
           )
         }
@@ -99,13 +171,49 @@ export default function ServicesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
   title: { fontSize: 22, fontFamily: "Inter_700Bold" },
-  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 3 },
-  chips: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
-  chipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 3 },
+  countBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    minWidth: 40,
+    alignItems: "center",
+  },
+  countText: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  filterWrap: {
+    borderBottomWidth: 1,
+  },
+  chipRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+    alignItems: "center",
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+  },
   list: { padding: 16 },
-  empty: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 12 },
-  emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  empty: { alignItems: "center", justifyContent: "center", paddingTop: 60, gap: 10 },
+  emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
+  emptyTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
+  emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular" },
 });

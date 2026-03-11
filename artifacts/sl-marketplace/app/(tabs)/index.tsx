@@ -96,16 +96,25 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.headerSub, { color: colors.primary }]}>{t("discover")}</Text>
             <Text style={[styles.headerTitle, { color: colors.text }]}>{t("your_next_home")}</Text>
           </View>
-          <Pressable
-            onPress={() => setLanguage(language === "en" ? "ne" : "en")}
-            style={[styles.langBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <Text style={[styles.langText, { color: colors.primary }]}>{language === "en" ? "नेपाली" : "English"}</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => router.push("/about")}
+              hitSlop={10}
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Feather name="info" size={16} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => setLanguage(language === "en" ? "ne" : "en")}
+              style={[styles.langBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.langText, { color: colors.primary }]}>{language === "en" ? "नेपाली" : "English"}</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Search Bar */}
@@ -197,7 +206,9 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   headerSub: { fontSize: 13, fontFamily: "Inter_500Medium", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 },
   headerTitle: { fontSize: 26, fontFamily: "Inter_700Bold" },
-  langBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
+  iconBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  langBtn: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   langText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   searchBar: {
     flexDirection: "row",

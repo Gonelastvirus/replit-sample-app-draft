@@ -16,7 +16,7 @@ type Service = {
 };
 
 const SERVICE_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
-  plumber: "droplets",
+  plumber: "droplet",
   brick_supplier: "layers",
   electrician: "zap",
   cement_supplier: "box",
