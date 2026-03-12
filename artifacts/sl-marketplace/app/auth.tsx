@@ -173,13 +173,7 @@ export default function AuthScreen() {
           </Pressable>
         </View>
 
-        {/* Admin hint */}
-        <View style={[styles.adminHint, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}>
-          <Feather name="info" size={14} color={colors.textTertiary} />
-          <Text style={[styles.adminHintText, { color: colors.textTertiary }]}>
-            Admin: admin@sl.com / admin123
-          </Text>
-        </View>
+        
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -206,6 +200,5 @@ const styles = StyleSheet.create({
   switchLink: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   divider: { borderTopWidth: 1, marginTop: 20, paddingTop: 16, alignItems: "center" },
   guestText: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  adminHint: { flexDirection: "row", alignItems: "center", gap: 6, padding: 10, borderRadius: 8, borderWidth: 1, marginTop: 16 },
-  adminHintText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  
 });
