@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, aboutTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { adminMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.put("/", async (req, res) => {
+router.put("/", adminMiddleware, async (req, res) => {
   try {
     const { mission, vision, contactPhone, contactEmail, address, socialLinks } = req.body;
     const [existing] = await db.select().from(aboutTable).limit(1);

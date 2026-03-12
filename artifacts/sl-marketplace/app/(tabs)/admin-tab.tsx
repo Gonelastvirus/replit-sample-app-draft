@@ -118,10 +118,28 @@ export default function AdminTabScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPadding + 10, backgroundColor: colors.backgroundSecondary, borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>{t("adminPanel")}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {data?.total || 0} {selectedStatus} listings
-        </Text>
+        <View>
+          <Text style={[styles.title, { color: colors.text }]}>{t("adminPanel")}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {data?.total || 0} {selectedStatus} listings
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => router.push("/admin-services")}
+            style={[styles.headerBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
+          >
+            <Feather name="tool" size={13} color={colors.primary} />
+            <Text style={[styles.headerBtnText, { color: colors.primary }]}>Services</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/admin-about")}
+            style={[styles.headerBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
+          >
+            <Feather name="info" size={13} color={colors.primary} />
+            <Text style={[styles.headerBtnText, { color: colors.primary }]}>About</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Status Tabs */}
@@ -218,7 +236,10 @@ export default function AdminTabScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
+  headerActions: { flexDirection: "row", gap: 8, marginBottom: 2 },
+  headerBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9, borderWidth: 1 },
+  headerBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   title: { fontSize: 22, fontFamily: "Inter_700Bold" },
   subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   tabs: { flexDirection: "row", borderBottomWidth: 1 },

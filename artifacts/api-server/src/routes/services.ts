@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, constructionServicesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
+import { adminMiddleware } from "../middlewares/auth";
 
 const router = Router();
 
@@ -32,9 +33,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", adminMiddleware, async (req, res) => {
   try {
     const { businessName, serviceType, phone, whatsapp, district, description } = req.body;
+    if (!businessName || !serviceType || !phone || !district) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
     const [service] = await db.insert(constructionServicesTable).values({
       businessName, serviceType, phone, whatsapp: whatsapp ?? null, district, description: description ?? null,
     }).returning();
@@ -44,7 +49,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", adminMiddleware, async (req, res) => {
   try {
     const { businessName, serviceType, phone, whatsapp, district, description } = req.body;
     const [updated] = await db.update(constructionServicesTable)
@@ -58,7 +63,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", adminMiddleware, async (req, res) => {
   try {
     await db.delete(constructionServicesTable).where(eq(constructionServicesTable.id, Number(req.params.id)));
     res.status(204).send();
