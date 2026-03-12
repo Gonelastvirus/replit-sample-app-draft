@@ -36,7 +36,7 @@ export default function ProfileScreen() {
           <View style={[styles.avatarPlaceholder, { backgroundColor: colors.backgroundTertiary }]}>
             <Feather name="user" size={40} color={colors.textTertiary} />
           </View>
-          <Text style={[styles.guestTitle, { color: colors.text }]}>Join SL Marketplace</Text>
+          <Text style={[styles.guestTitle, { color: colors.text }]}>Join SL Housing & Construction</Text>
           <Text style={[styles.guestDesc, { color: colors.textSecondary }]}>
             Create an account to save favorites and list your properties
           </Text>

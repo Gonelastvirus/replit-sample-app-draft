@@ -42,7 +42,7 @@ function NativeTabLayout({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
-function ClassicTabLayout({ isAdmin }: { isAdmin: boolean }) {
+function ClassicTabLayout({ isAdmin, pendingCount }: { isAdmin: boolean; pendingCount?: number }) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
@@ -126,6 +126,8 @@ function ClassicTabLayout({ isAdmin }: { isAdmin: boolean }) {
             title: "Admin",
             tabBarIcon: ({ color }) =>
               isIOS ? <SymbolView name="shield" tintColor={color} size={24} /> : <Feather name="shield" size={22} color={color} />,
+            tabBarBadge: pendingCount && pendingCount > 0 ? pendingCount : undefined,
+            tabBarBadgeStyle: { backgroundColor: "#D64C26", fontSize: 10 },
           }}
         />
       ) : (
@@ -136,9 +138,9 @@ function ClassicTabLayout({ isAdmin }: { isAdmin: boolean }) {
 }
 
 export default function TabLayout() {
-  const { isAdmin } = useApp();
+  const { isAdmin, pendingCount } = useApp();
   if (isLiquidGlassAvailable()) {
     return <NativeTabLayout isAdmin={isAdmin} />;
   }
-  return <ClassicTabLayout isAdmin={isAdmin} />;
+  return <ClassicTabLayout isAdmin={isAdmin} pendingCount={pendingCount} />;
 }

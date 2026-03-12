@@ -52,7 +52,7 @@ export default function AboutScreen() {
           <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
             <Feather name="home" size={36} color="#fff" />
           </View>
-          <Text style={[styles.brandName, { color: colors.text }]}>SL Marketplace</Text>
+          <Text style={[styles.brandName, { color: colors.text }]}>SL Housing & Construction</Text>
           <Text style={[styles.brandTagline, { color: colors.textSecondary }]}>
             Nepal's Real Estate & Construction Platform
           </Text>

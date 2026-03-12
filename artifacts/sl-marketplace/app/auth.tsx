@@ -76,7 +76,7 @@ export default function AuthScreen() {
           <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
             <Feather name="home" size={28} color="#fff" />
           </View>
-          <Text style={[styles.brandName, { color: colors.text }]}>SL Marketplace</Text>
+          <Text style={[styles.brandName, { color: colors.text }]}>SL Housing & Construction</Text>
         </View>
 
         <Text style={[styles.title, { color: colors.text }]}>
