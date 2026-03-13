@@ -1,8 +1,9 @@
 import { useApp } from "@/context/AppContext";
 
-const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
-  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`
-  : "/api";
+const domain = process.env.EXPO_PUBLIC_DOMAIN;
+const isLocal = domain ? /^(localhost|\d+\.\d+)/.test(domain) : false;
+const protocol = isLocal ? "http" : "https";
+const BASE_URL = domain ? `${protocol}://${domain}/api` : "/api";
 
 export function useApi() {
   const { token } = useApp();

@@ -127,7 +127,7 @@ export default function HomeScreen() {
         </Pressable>
 
         {/* Quick Categories */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+        <View style={styles.categories}>
           {PROPERTY_TYPES.map((pt) => (
             <Pressable
               key={pt.key}
@@ -137,10 +137,10 @@ export default function HomeScreen() {
               <View style={[styles.categoryIcon, { backgroundColor: colors.primary + "15" }]}>
                 <Feather name={pt.icon} size={18} color={colors.primary} />
               </View>
-              <Text style={[styles.categoryText, { color: colors.text }]}>{t(pt.key)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.categoryText, { color: colors.text }]}>{t(pt.key)}</Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
 
         {/* Featured */}
         <View style={styles.section}>
@@ -222,13 +222,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   searchPlaceholder: { fontSize: 15, fontFamily: "Inter_400Regular", flex: 1 },
-  categories: { paddingHorizontal: 20, gap: 10, paddingBottom: 4 },
-  categoryBtn: { alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 14, gap: 8, width: 80 },
+  categories: { flexDirection: "row", paddingHorizontal: 20, gap: 10, marginBottom: 4 },
+  categoryBtn: { flex: 1, alignItems: "center", borderRadius: 14, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 4, gap: 8 },
   categoryIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  categoryText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  categoryText: { fontSize: 12, fontFamily: "Inter_500Medium", textAlign: "center" },
   section: { marginTop: 24 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 14 },
   sectionTitle: { fontSize: 19, fontFamily: "Inter_700Bold" },
   viewAll: { fontSize: 14, fontFamily: "Inter_500Medium" },
   emptyText: { textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
 });
+
