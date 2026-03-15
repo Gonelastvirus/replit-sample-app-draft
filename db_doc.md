@@ -222,8 +222,8 @@ Look for an address like `192.168.1.x` or `10.0.0.x`.
 
 ```bash
 cd artifacts/sl-marketplace
-EXPO_PUBLIC_DOMAIN=192.168.1.XXX:5000 \
-REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.XXX \
+EXPO_PUBLIC_DOMAIN=192.168.1.27:5000 \
+REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.27 \
 pnpm exec expo start --port 8080
 ```
 

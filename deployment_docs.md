@@ -79,7 +79,7 @@ Run this once from your local machine to create all the tables in Neon:
 
 ```bash
 # Set DATABASE_URL to your Neon connection string temporarily
-export DATABASE_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require"
+export DATABASE_URL="postgresql://neondb_owner:npg_BMI3y6bTtvaZ@ep-sweet-fog-a14oyifo-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 pnpm --filter @workspace/db run push
 ```
