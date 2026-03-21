@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import React, { useState } from "react";
 import {
   Alert,
@@ -133,8 +133,14 @@ export default function SubmitScreen() {
         const optimized = await optimizeImage(asset.uri);
         optimizedUris.push(optimized);
       } catch (err: any) {
-        Alert.alert("Image too large", err.message);
-      }
+  console.warn(err);
+
+  if (err.message?.toLowerCase().includes("large")) {
+    Alert.alert("Image too large", err.message);
+  } else {
+    Alert.alert("Error", "Failed to process image");
+  }
+}
     }
     setPhotoUris((prev) => [...prev, ...optimizedUris].slice(0, 10));
   };

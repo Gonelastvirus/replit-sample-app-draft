@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import router from "./routes";
 
+
 const app: Express = express();
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -17,6 +18,5 @@ app.use(express.urlencoded({ extended: true }));
 
 //app.use("/api/files", express.static(uploadDir));
 app.use("/api", router);
-
 export default app;
 

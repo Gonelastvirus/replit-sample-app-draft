@@ -24,7 +24,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 12 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = /\.(jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|heic|heif)$/i;
     const allowedMime = /^(image\/|video\/)/;
@@ -37,7 +37,7 @@ const upload = multer({
 });
 
 const router = Router();
-
+	
 router.post("/", upload.array("files",3), (req, res) => {
   const files = req.files as any[];
   if (!files || files.length === 0) {
