@@ -1,8 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system";
 import React, { useState } from "react";
 import {
   Alert,
@@ -25,68 +23,18 @@ import { NEPAL_DISTRICTS } from "@/constants/districts";
 
 const LISTING_TYPES = ["sale", "rent"] as const;
 const PROPERTY_TYPES = ["house", "land", "apartment", "commercial"] as const;
-const AMENITY_OPTIONS = [
-  "parking",
-  "balcony",
-  "garden",
-  "water",
-  "internet",
-  "road_access",
-  "solar",
-  "security",
-  "terrace",
-  "lift",
-];
+const AMENITY_OPTIONS = ["parking", "balcony", "garden", "water", "internet", "road_access", "solar", "security", "terrace", "lift"];
 
 async function uploadFile(uri: string, name: string, type: string): Promise<string> {
   const formData = new FormData();
-  formData.append("files", { uri, name, type } as any);
-
-  const res = await fetch(`${BASE_URL}/upload`, { method: "POST", body: formData });
-
-  if (!res.ok) {
-    let errorText = "";
-    try { errorText = await res.text(); } catch {}
-    throw new Error(`Upload failed (${res.status}): ${errorText || "no details"}`);
-  }
-
+  formData.append("files", { uri, name, type } as unknown as Blob);
+  const res = await fetch(`${BASE_URL}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) throw new Error("Upload failed");
   const json = await res.json();
-  return json.urls?.[0] || json.url || json[0] || "";
-}
-
-async function optimizeImage(originalUri: string, targetMaxMB = 1.5): Promise<string> {
-  const fileInfo = await FileSystem.getInfoAsync(originalUri);
-  const sizeMB = fileInfo.size / (1024 * 1024);
-
-  if (sizeMB > 5) throw new Error("Image too large, please select smaller images (<5 MB).");
-
-  let quality = 0.85;
-  const minQuality = 0.45;
-  const qualityStep = 0.1;
-
-  let result = await ImageManipulator.manipulateAsync(
-    originalUri,
-    [{ resize: { width: 1200 } }],
-    { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
-  );
-
-  let currentUri = result.uri;
-
-  while (quality > minQuality) {
-    const info = await FileSystem.getInfoAsync(currentUri);
-    const sizeMB2 = info.size / (1024 * 1024);
-    if (sizeMB2 <= targetMaxMB) break;
-
-    quality = Math.max(minQuality, quality - qualityStep);
-    result = await ImageManipulator.manipulateAsync(
-      originalUri,
-      [{ resize: { width: 1200 } }],
-      { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
-    );
-    currentUri = result.uri;
-  }
-
-  return currentUri;
+  return json.urls[0];
 }
 
 export default function SubmitScreen() {
@@ -113,86 +61,105 @@ export default function SubmitScreen() {
     ownerPhone: user?.phone || "",
     ownerWhatsapp: "",
   });
-
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoThumb, setVideoThumb] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const update = (key: string, val: string) => setForm((prev) => ({ ...prev, [key]: val }));
+  const update = (key: string, val: string) => setForm((p) => ({ ...p, [key]: val }));
 
-  const toggleAmenity = (amenity: string) =>
+  const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((prev) =>
       prev.includes(amenity) ? prev.filter((a) => a !== amenity) : [...prev, amenity]
     );
-
-  const handleImageResult = async (assets: ImagePicker.ImagePickerAsset[]) => {
-    const optimizedUris: string[] = [];
-    for (const asset of assets) {
-      try {
-        const optimized = await optimizeImage(asset.uri);
-        optimizedUris.push(optimized);
-      } catch (err: any) {
-        Alert.alert("Image too large", err.message);
-      }
-    }
-    setPhotoUris((prev) => [...prev, ...optimizedUris].slice(0, 10));
   };
 
   const pickPhotos = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") return Alert.alert("Permission required", "Please allow access to your photo library.");
-
+    if (status !== "granted") {
+      Alert.alert("Permission required", "Please allow access to your photo library.");
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsMultipleSelection: true,
-      quality: 0.88,
+      quality: 0.8,
       selectionLimit: 10,
     });
-
-    if (!result.canceled) await handleImageResult(result.assets);
+    if (!result.canceled) {
+      const newUris = result.assets.map((a) => a.uri);
+      setPhotoUris((prev) => [...prev, ...newUris].slice(0, 10));
+    }
   };
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return Alert.alert("Permission required", "Please allow camera access.");
-
+    if (status !== "granted") {
+      Alert.alert("Permission required", "Please allow camera access.");
+      return;
+    }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.88,
+      mediaTypes: ["images"],
+      quality: 0.8,
     });
-
-    if (!result.canceled) await handleImageResult(result.assets);
+    if (!result.canceled) {
+      setPhotoUris((prev) => [...prev, result.assets[0].uri].slice(0, 10));
+    }
   };
 
-  const removePhoto = (index: number) => setPhotoUris((prev) => prev.filter((_, i) => i !== index));
+  const pickVideo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission required", "Please allow access to your photo library.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      quality: 1,
+      videoMaxDuration: 120,
+    });
+    if (!result.canceled) {
+      setVideoUri(result.assets[0].uri);
+      setVideoThumb(result.assets[0].uri);
+    }
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotoUris((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.description.trim() || !form.priceNpr || !form.ownerName.trim() || !form.ownerPhone.trim()) {
-      return Alert.alert("Error", "Please fill in all required fields");
+    if (!form.title || !form.description || !form.priceNpr || !form.ownerName || !form.ownerPhone) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
     }
     if (!user) {
-      return Alert.alert(t("loginRequired"), t("loginToFavorite"), [
+      Alert.alert(t("loginRequired"), t("loginToFavorite"), [
         { text: "Cancel", style: "cancel" },
         { text: t("login"), onPress: () => router.push("/auth") },
       ]);
+      return;
     }
-
     setLoading(true);
     setUploading(true);
-
     try {
-      // Upload images in parallel
-      const uploadedPhotos = await Promise.all(
-        photoUris.map(async (uri) => {
-          const ext = (uri.split(".").pop() || "jpg").toLowerCase();
-          const mimeType = ext === "jpg" || ext === "jpeg" ? "jpeg" : ext;
-          const filename = `listing-photo-${Date.now()}-${Math.floor(Math.random() * 1e6)}.${ext}`;
-          return await uploadFile(uri, filename, `image/${mimeType}`);
-        })
-      );
+      const uploadedPhotos: string[] = [];
+      for (const uri of photoUris) {
+        const ext = uri.split(".").pop() || "jpg";
+        const url = await uploadFile(uri, `photo_${Date.now()}.${ext}`, `image/${ext === "jpg" ? "jpeg" : ext}`);
+        uploadedPhotos.push(url);
+      }
 
-      const payload = {
+      let uploadedVideoUrl: string | null = null;
+      if (videoUri) {
+        const ext = videoUri.split(".").pop() || "mp4";
+        uploadedVideoUrl = await uploadFile(videoUri, `video_${Date.now()}.${ext}`, `video/${ext}`);
+      }
+      setUploading(false);
+
+      const body = {
         ...form,
         priceNpr: Number(form.priceNpr),
         areaDhur: form.areaDhur ? Number(form.areaDhur) : null,
@@ -203,29 +170,17 @@ export default function SubmitScreen() {
         longitude: form.longitude ? Number(form.longitude) : null,
         amenities: selectedAmenities,
         photos: uploadedPhotos,
+        videoUrl: uploadedVideoUrl,
       };
-
       const res = await fetch(`${BASE_URL}/properties`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        let errMsg = "";
-        try { errMsg = await res.text(); } catch {}
-        throw new Error(`Failed to create listing (${res.status}): ${errMsg || "no message"}`);
-      }
-
-      Alert.alert("Success", t("submitted") || "Listing submitted successfully!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (err: any) {
-      console.error("Submission error:", err);
-      Alert.alert("Error", err.message || "Failed to submit listing. Please try again.");
+      if (!res.ok) throw new Error("Failed to submit");
+      Alert.alert("Success!", t("submitted"), [{ text: "OK", onPress: () => router.back() }]);
+    } catch (err) {
+      Alert.alert("Error", "Failed to submit listing. Please try again.");
     } finally {
       setLoading(false);
       setUploading(false);
@@ -242,10 +197,7 @@ export default function SubmitScreen() {
         <View style={{ width: 22 }} />
       </View>
 
-<ScrollView 
-showsVerticalScrollIndicator={false} 
-contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
->
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.form, { paddingBottom: 80 }]}>
         {/* Listing Type */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>{t("listingType")} *</Text>
@@ -254,20 +206,9 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
               <Pressable
                 key={lt}
                 onPress={() => update("listingType", lt)}
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: form.listingType === lt ? colors.primary : colors.border,
-                    backgroundColor: form.listingType === lt ? colors.primary + "15" : "transparent",
-                  },
-                ]}
+                style={[styles.chip, { borderColor: form.listingType === lt ? colors.primary : colors.border, backgroundColor: form.listingType === lt ? colors.primary + "15" : "transparent" }]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    { color: form.listingType === lt ? colors.primary : colors.textSecondary },
-                  ]}
-                >
+                <Text style={[styles.chipText, { color: form.listingType === lt ? colors.primary : colors.textSecondary }]}>
                   {t("for" + lt.charAt(0).toUpperCase() + lt.slice(1))}
                 </Text>
               </Pressable>
@@ -283,44 +224,22 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
               <Pressable
                 key={pt}
                 onPress={() => update("propertyType", pt)}
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: form.propertyType === pt ? colors.primary : colors.border,
-                    backgroundColor: form.propertyType === pt ? colors.primary + "15" : "transparent",
-                  },
-                ]}
+                style={[styles.chip, { borderColor: form.propertyType === pt ? colors.primary : colors.border, backgroundColor: form.propertyType === pt ? colors.primary + "15" : "transparent" }]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    { color: form.propertyType === pt ? colors.primary : colors.textSecondary },
-                  ]}
-                >
-                  {t(pt)}
-                </Text>
+                <Text style={[styles.chipText, { color: form.propertyType === pt ? colors.primary : colors.textSecondary }]}>{t(pt)}</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
         {/* Title */}
-        <InputField
-          label={`${t("title")} *`}
-          value={form.title}
-          onChangeText={(v) => update("title", v)}
-          placeholder="e.g. Modern House in Kathmandu"
-          colors={colors}
-        />
+        <InputField label={`${t("title")} *`} value={form.title} onChangeText={(v) => update("title", v)} placeholder="e.g. Modern House in Kathmandu" colors={colors} />
 
         {/* Description */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>{t("descriptionLabel")} *</Text>
           <TextInput
-            style={[
-              styles.textarea,
-              { borderColor: colors.border, color: colors.text, backgroundColor: colors.card },
-            ]}
+            style={[styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.card }]}
             value={form.description}
             onChangeText={(v) => update("description", v)}
             placeholder="Describe the property..."
@@ -335,26 +254,13 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
           <Text style={[styles.label, { color: colors.textSecondary }]}>{t("district")} *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.chips}>
-              {NEPAL_DISTRICTS.slice(0,25).map((d) => (
+              {NEPAL_DISTRICTS.slice(0, 15).map((d) => (
                 <Pressable
                   key={d}
                   onPress={() => update("district", d)}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: form.district === d ? colors.primary : colors.border,
-                      backgroundColor: form.district === d ? colors.primary + "25" : "transparent",
-                    },
-                  ]}
+                  style={[styles.chip, { borderColor: form.district === d ? colors.primary : colors.border, backgroundColor: form.district === d ? colors.primary + "15" : "transparent" }]}
                 >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: form.district === d ? colors.primary : colors.textSecondary },
-                    ]}
-                  >
-                    {d}
-                  </Text>
+                  <Text style={[styles.chipText, { color: form.district === d ? colors.primary : colors.textSecondary }]}>{d}</Text>
                 </Pressable>
               ))}
             </View>
@@ -362,60 +268,25 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
         </View>
 
         {/* Price */}
-        <InputField
-          label={`${t("price")} *`}
-          value={form.priceNpr}
-          onChangeText={(v) => update("priceNpr", v)}
-          placeholder="e.g. 5000000"
-          keyboardType="numeric"
-          colors={colors}
-        />
+        <InputField label={`${t("price")} *`} value={form.priceNpr} onChangeText={(v) => update("priceNpr", v)} placeholder="e.g. 5000000" keyboardType="numeric" colors={colors} />
 
-        {/* Area (Dhur) */}
-        <InputField
-          label={t("areaLabel")}
-          value={form.areaDhur}
-          onChangeText={(v) => update("areaDhur", v)}
-          placeholder="e.g. 4.5"
-          keyboardType="numeric"
-          colors={colors}
-        />
+        {/* Area */}
+        <InputField label={t("areaLabel")} value={form.areaDhur} onChangeText={(v) => update("areaDhur", v)} placeholder="e.g. 4.5" keyboardType="numeric" colors={colors} />
 
-        {/* Bedrooms & Bathrooms */}
+        {/* Beds & Baths */}
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <InputField
-              label={t("bedrooms")}
-              value={form.bedrooms}
-              onChangeText={(v) => update("bedrooms", v)}
-              placeholder="e.g. 3"
-              keyboardType="numeric"
-              colors={colors}
-            />
+            <InputField label={t("bedrooms")} value={form.bedrooms} onChangeText={(v) => update("bedrooms", v)} placeholder="e.g. 3" keyboardType="numeric" colors={colors} />
           </View>
           <View style={{ flex: 1 }}>
-            <InputField
-              label={t("baths")}
-              value={form.bathrooms}
-              onChangeText={(v) => update("bathrooms", v)}
-              placeholder="e.g. 2"
-              keyboardType="numeric"
-              colors={colors}
-            />
+            <InputField label={t("baths")} value={form.bathrooms} onChangeText={(v) => update("bathrooms", v)} placeholder="e.g. 2" keyboardType="numeric" colors={colors} />
           </View>
         </View>
 
         {/* Build Year */}
-        <InputField
-          label={t("builtYear")}
-          value={form.buildYear}
-          onChangeText={(v) => update("buildYear", v)}
-          placeholder="e.g. 2020"
-          keyboardType="numeric"
-          colors={colors}
-        />
+        <InputField label={t("builtYear")} value={form.buildYear} onChangeText={(v) => update("buildYear", v)} placeholder="e.g. 2020" keyboardType="numeric" colors={colors} />
 
-        {/* Coordinates */}
+        {/* Location Coordinates */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Location Coordinates (optional)</Text>
           <View style={[styles.coordHint, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "25" }]}>
@@ -450,10 +321,7 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
 
         {/* Photos */}
         <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            Photos (up to 4) – automatically resized & optimized
-          </Text>
-
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Photos (up to 10)</Text>
           {photoUris.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
               <View style={styles.photoStrip}>
@@ -472,7 +340,6 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
               </View>
             </ScrollView>
           )}
-
           <View style={styles.row}>
             <Pressable
               onPress={pickPhotos}
@@ -481,7 +348,6 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
               <Feather name="image" size={18} color={colors.primary} />
               <Text style={[styles.mediaBtnText, { color: colors.text }]}>From Gallery</Text>
             </Pressable>
-
             <Pressable
               onPress={takePhoto}
               style={[styles.mediaBtn, { borderColor: colors.border, backgroundColor: colors.card, flex: 1 }]}
@@ -492,6 +358,30 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
           </View>
         </View>
 
+        {/* Video */}
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Video Tour (optional)</Text>
+          {videoUri ? (
+            <View style={[styles.videoPreview, { borderColor: colors.border, backgroundColor: colors.card }]}>
+              <Feather name="video" size={22} color={colors.primary} />
+              <Text style={[styles.videoPreviewText, { color: colors.text }]} numberOfLines={1}>
+                Video selected
+              </Text>
+              <Pressable onPress={() => { setVideoUri(null); setVideoThumb(null); }} hitSlop={8}>
+                <Feather name="x" size={18} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={pickVideo}
+              style={[styles.mediaBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            >
+              <Feather name="video" size={18} color={colors.primary} />
+              <Text style={[styles.mediaBtnText, { color: colors.text }]}>Select Video (max 2 min)</Text>
+            </Pressable>
+          )}
+        </View>
+
         {/* Amenities */}
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>{t("amenities")}</Text>
@@ -500,56 +390,23 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
               <Pressable
                 key={a}
                 onPress={() => toggleAmenity(a)}
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: selectedAmenities.includes(a) ? colors.primary : colors.border,
-                    backgroundColor: selectedAmenities.includes(a) ? colors.primary + "15" : "transparent",
-                  },
-                ]}
+                style={[styles.chip, { borderColor: selectedAmenities.includes(a) ? colors.primary : colors.border, backgroundColor: selectedAmenities.includes(a) ? colors.primary + "15" : "transparent" }]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    { color: selectedAmenities.includes(a) ? colors.primary : colors.textSecondary },
-                  ]}
-                >
-                  {t(a)}
-                </Text>
+                <Text style={[styles.chipText, { color: selectedAmenities.includes(a) ? colors.primary : colors.textSecondary }]}>{t(a)}</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
-        {/* Owner / Contact Info */}
+        {/* Owner Info */}
         <View style={[styles.ownerSection, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}>
           <Text style={[styles.ownerSectionTitle, { color: colors.text }]}>Owner / Contact Info</Text>
-          <InputField
-            label={`${t("name")} *`}
-            value={form.ownerName}
-            onChangeText={(v) => update("ownerName", v)}
-            placeholder="Owner name"
-            colors={colors}
-          />
-          <InputField
-            label={`${t("phone")} *`}
-            value={form.ownerPhone}
-            onChangeText={(v) => update("ownerPhone", v)}
-            placeholder="+977-98XXXXXXXX"
-            keyboardType="phone-pad"
-            colors={colors}
-          />
-          <InputField
-            label="WhatsApp (optional)"
-            value={form.ownerWhatsapp}
-            onChangeText={(v) => update("ownerWhatsapp", v)}
-            placeholder="+977-98XXXXXXXX"
-            keyboardType="phone-pad"
-            colors={colors}
-          />
+          <InputField label={`${t("name")} *`} value={form.ownerName} onChangeText={(v) => update("ownerName", v)} placeholder="Owner name" colors={colors} />
+          <InputField label={`${t("phone")} *`} value={form.ownerPhone} onChangeText={(v) => update("ownerPhone", v)} placeholder="+977-98XXXXXXXX" keyboardType="phone-pad" colors={colors} />
+          <InputField label="WhatsApp (optional)" value={form.ownerWhatsapp} onChangeText={(v) => update("ownerWhatsapp", v)} placeholder="+977-98XXXXXXXX" keyboardType="phone-pad" colors={colors} />
         </View>
 
-        {/* Review Note */}
+        {/* Note */}
         <View style={[styles.note, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
           <Feather name="info" size={14} color={colors.primary} />
           <Text style={[styles.noteText, { color: colors.textSecondary }]}>
@@ -557,7 +414,7 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
           </Text>
         </View>
 
-   {/* Submit button */}
+        {/* Submit */}
         <Pressable
           onPress={handleSubmit}
           disabled={loading}
@@ -566,12 +423,14 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
           {loading ? (
             <>
               <ActivityIndicator color="#fff" size="small" />
-              <Text style={styles.submitBtnText}>{uploading ? "Uploading photos..." : t("submitting") || "Submitting..."}</Text>
+              <Text style={styles.submitBtnText}>
+                {uploading ? "Uploading media..." : t("submitting")}
+              </Text>
             </>
           ) : (
             <>
               <Feather name="send" size={18} color="#fff" />
-              <Text style={styles.submitBtnText}>{t("submit") || "Submit Listing"}</Text>
+              <Text style={styles.submitBtnText}>{t("submit")}</Text>
             </>
           )}
         </Pressable>
@@ -580,14 +439,7 @@ contentContainerStyle={[styles.form, { paddingBottom: 80 }]}
   );
 }
 
-function InputField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType,
-  colors,
-}: {
+function InputField({ label, value, onChangeText, placeholder, keyboardType, colors }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
@@ -637,4 +489,7 @@ const styles = StyleSheet.create({
   photoRemove: { position: "absolute", top: 3, right: 3, width: 20, height: 20, borderRadius: 10, backgroundColor: "rgba(0,0,0,0.65)", alignItems: "center", justifyContent: "center" },
   mediaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 16, borderStyle: "dashed" },
   mediaBtnText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  videoPreview: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 12, padding: 14 },
+  videoPreviewText: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
 });
+

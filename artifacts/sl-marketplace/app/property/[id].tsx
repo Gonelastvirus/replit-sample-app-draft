@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -48,6 +49,39 @@ type Property = {
   ownerWhatsapp?: string | null;
   createdAt: string;
 };
+
+function VideoPlayer({ uri, colors }: { uri: string; colors: ReturnType<typeof import("@/hooks/useColors").useColors> }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+  const [playing, setPlaying] = useState(false);
+
+  const toggle = () => {
+    if (playing) {
+      player.pause();
+      setPlaying(false);
+    } else {
+      player.play();
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <View style={videoStyles.wrap}>
+      <VideoView
+        player={player}
+        style={videoStyles.video}
+        nativeControls={true}
+        contentFit="contain"
+      />
+    </View>
+  );
+}
+
+const videoStyles = StyleSheet.create({
+  wrap: { borderRadius: 16, overflow: "hidden", backgroundColor: "#000", height: 220 },
+  video: { flex: 1, width: "100%" },
+});
 
 export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -217,6 +251,17 @@ export default function PropertyDetailScreen() {
             <Text style={[styles.description, { color: colors.textSecondary }]}>{property.description}</Text>
           </View>
 
+          {/* Video Tour */}
+          {property.videoUrl ? (
+            <View style={styles.section}>
+              <View style={styles.videoHeader}>
+                <Feather name="video" size={18} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Video Tour</Text>
+              </View>
+              <VideoPlayer uri={property.videoUrl} colors={colors} />
+            </View>
+          ) : null}
+
           {/* Amenities */}
           {property.amenities.length > 0 ? (
             <View style={styles.section}>
@@ -294,6 +339,7 @@ const styles = StyleSheet.create({
   specLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
   section: { gap: 12 },
   sectionTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },
+  videoHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   description: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 24 },
   amenitiesWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   amenityChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20 },
@@ -310,3 +356,4 @@ const styles = StyleSheet.create({
   whatsappBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 14, gap: 8 },
   callBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
 });
+
