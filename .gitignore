@@ -41,6 +41,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
+#environment files
+/home/lastvirus/Desktop/replit-sample-app-draft/artifacts/api-server/.env
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
