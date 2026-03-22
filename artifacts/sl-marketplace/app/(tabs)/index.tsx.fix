@@ -1,0 +1,257 @@
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useState, useEffect } from "react";
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
+import { PropertyCard } from "@/components/PropertyCard";
+import { PropertyCardSkeleton } from "@/components/SkeletonLoader";
+import { useColors } from "@/hooks/useColors";
+import { useT } from "@/hooks/useT";
+import { useApp } from "@/context/AppContext";
+import { BASE_URL } from "@/hooks/useApi";
+
+type Property = {
+  id: number;
+  title: string;
+  district: string;
+  listingType: "sale" | "rent";
+  propertyType: string;
+  priceNpr: number;
+  areaDhur?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  photos: string[];
+  featured?: boolean;
+};
+
+const PROPERTY_TYPES = [
+  { key: "house", icon: "home" as const },
+  { key: "land", icon: "map" as const },
+  { key: "apartment", icon: "layers" as const },
+  { key: "commercial", icon: "briefcase" as const },
+];
+
+export default function HomeScreen() {
+  const colors = useColors();
+  const t = useT();
+  const insets = useSafeAreaInsets();
+  const { language, setLanguage, userId } = useApp(); // assuming userId is in context
+  const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
+
+  const featuredQuery = useQuery<{ properties: Property[] }>({
+    queryKey: ["featured"],
+    queryFn: () => fetch(`${BASE_URL}/properties/featured`).then((r) => r.json()),
+  });
+
+  const recentQuery = useQuery<{ properties: Property[] }>({
+    queryKey: ["recent-properties"],
+    queryFn: () => fetch(`${BASE_URL}/properties?limit=10`).then((r) => r.json()),
+  });
+
+  const favoritesQuery = useQuery<{ favoriteIds: number[] }>({
+    queryKey: ["favorites", userId],
+    queryFn: async () => {
+      if (!userId) return { favoriteIds: [] };
+      const res = await fetch(`${BASE_URL}/favorites?userId=${userId}`);
+      const data = await res.json();
+      return { favoriteIds: data.favoriteIds || [] };
+    },
+    enabled: !!userId,
+  });
+
+  useEffect(() => {
+    if (favoritesQuery.data?.favoriteIds) {
+      setFavoriteIds(new Set(favoritesQuery.data.favoriteIds));
+    }
+  }, [favoritesQuery.data]);
+
+  const toggleFavorite = async (propertyId: number) => {
+    if (!userId) return;
+
+    const isFav = favoriteIds.has(propertyId);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(propertyId);
+      else next.add(propertyId);
+      return next;
+    });
+
+    try {
+      if (isFav) {
+        await fetch(`${BASE_URL}/favorites/${propertyId}?userId=${userId}`, { method: "DELETE" });
+      } else {
+        await fetch(`${BASE_URL}/favorites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, propertyId }),
+        });
+      }
+    } catch (err) {
+      console.error("Failed to sync favorite", err);
+      // revert on failure
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFav) next.add(propertyId);
+        else next.delete(propertyId);
+        return next;
+      });
+    }
+  };
+
+  const topPadding = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 118 : 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={!!(featuredQuery.isRefetching || recentQuery.isRefetching || favoritesQuery.isRefetching)}
+            onRefresh={() => {
+              featuredQuery.refetch();
+              recentQuery.refetch();
+              favoritesQuery.refetch();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.headerSub, { color: colors.primary }]}>{t("discover")}</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t("your_next_home")}</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => router.push("/about")}
+              hitSlop={10}
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Feather name="info" size={16} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => setLanguage(language === "en" ? "ne" : "en")}
+              style={[styles.langBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Text style={[styles.langText, { color: colors.primary }]}>{language === "en" ? "नेपाली" : "English"}</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <Pressable
+          onPress={() => router.push("/(tabs)/search")}
+          style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
+          <Feather name="search" size={18} color={colors.textTertiary} />
+          <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>{t("searchPlaceholder")}</Text>
+        </Pressable>
+
+        {/* Quick Categories */}
+        <View style={styles.categories}>
+          {PROPERTY_TYPES.map((pt) => (
+            <Pressable
+              key={pt.key}
+              onPress={() => router.push({ pathname: "/(tabs)/search", params: { propertyType: pt.key } })}
+              style={[styles.categoryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={[styles.categoryIcon, { backgroundColor: colors.primary + "15" }]}>
+                <Feather name={pt.icon} size={18} color={colors.primary} />
+              </View>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.categoryText, { color: colors.text }]}>{t(pt.key)}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Featured */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t("featured")}</Text>
+            <Pressable onPress={() => router.push("/(tabs)/search")}>
+              <Text style={[styles.viewAll, { color: colors.primary }]}>{t("viewAll")}</Text>
+            </Pressable>
+          </View>
+          {featuredQuery.isLoading ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}>
+              {[1, 2].map((k) => <View key={k} style={{ width: 280 }}><PropertyCardSkeleton /></View>)}
+            </ScrollView>
+          ) : featuredQuery.data?.properties.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>No featured listings yet</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 20 }}>
+              {featuredQuery.data.properties.map((p) => (
+                <View key={p.id} style={{ width: 280 }}>
+                  <PropertyCard
+                    property={p}
+                    onPress={() => router.push({ pathname: "/property/[id]", params: { id: p.id } })}
+                    onFavorite={() => toggleFavorite(p.id)}
+                    isFavorited={favoriteIds.has(p.id)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Recent */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t("recent")}</Text>
+            <Pressable onPress={() => router.push("/(tabs)/search")}>
+              <Text style={[styles.viewAll, { color: colors.primary }]}>{t("viewAll")}</Text>
+            </Pressable>
+          </View>
+          <View style={{ paddingHorizontal: 20 }}>
+            {recentQuery.isLoading ? (
+              [1, 2, 3].map((k) => <PropertyCardSkeleton key={k} />)
+            ) : (
+              recentQuery.data?.properties.map((p) => (
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  onPress={() => router.push({ pathname: "/property/[id]", params: { id: p.id } })}
+                  onFavorite={() => toggleFavorite(p.id)}
+                  isFavorited={favoriteIds.has(p.id)}
+                />
+              ))
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  headerSub: { fontSize: 13, fontFamily: "Inter_500Medium", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 },
+  headerTitle: { fontSize: 26, fontFamily: "Inter_700Bold" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
+  iconBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  langBtn: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  langText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  searchBar: { flexDirection: "row", alignItems: "center", marginHorizontal: 20, marginBottom: 16, paddingHorizontal: 14, paddingVertical: 13, borderRadius: 14, borderWidth: 1, gap: 10 },
+  searchPlaceholder: { fontSize: 15, fontFamily: "Inter_400Regular", flex: 1 },
+  categories: { flexDirection: "row", paddingHorizontal: 20, gap: 10, marginBottom: 4 },
+  categoryBtn: { flex: 1, alignItems: "center", borderRadius: 14, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 4, gap: 8 },
+  categoryIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  categoryText: { fontSize: 12, fontFamily: "Inter_500Medium", textAlign: "center" },
+  section: { marginTop: 24 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 14 },
+  sectionTitle: { fontSize: 19, fontFamily: "Inter_700Bold" },
+  viewAll: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  emptyText: { textAlign: "center", padding: 20, fontFamily: "Inter_400Regular" },
+});
